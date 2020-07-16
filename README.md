@@ -7,7 +7,7 @@ Meetup "Crear Mapas con R". Julio 2020
 
 
 ## Nuestras redes
-Sitio en Meetup: https://www.meetup.com/R-en-el-NEA
-Twitter: https://twitter.com/NeaRenel
-Sitio web:  https://renelnea.github.io/web/
-Canal de Youtube: https://www.youtube.com/channel/UCCFZ9VYxqYNf3KhUJZEvjAg/featured 
+* Sitio en Meetup: https://www.meetup.com/R-en-el-NEA
+* Twitter: https://twitter.com/NeaRenel
+* Sitio web:  https://renelnea.github.io/web/
+* Canal de Youtube: https://www.youtube.com/channel/UCCFZ9VYxqYNf3KhUJZEvjAg/featured 
