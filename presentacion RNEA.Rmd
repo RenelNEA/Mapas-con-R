@@ -1,0 +1,275 @@
+---
+title: "Como Crear Mapas con R"
+author: "Jose -Yeyo- Mourglia"
+date: "Julio de 2020"
+#output: slidy_presentation
+#output: revealjs::revealjs_presentation
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+```{r}
+#s <- livecode::serve_file()
+```
+
+
+## Introduccion
+
+En R contamos con varios paquete de funciones que permiten manipular información espacial con facilidad.
+sp,sf,Gdal,raster,mapview,tmap, ggplot, etc.
+
+El paquete sf, lanzado en el 2016, el cual se creó en base a las funcionalidades de tres paquetes anteriores: sp, rgeos y rgdal y que implementa el modelo estándar de código abierto simple features (caracteristicas simples) para la representación de objetos del mundo real en la computadora.
+La principal ventaja que nos entrega el paquete sf es que este permite trabajar con datos espaciales dentro del tidyverse, es decir, poder manejar datos espaciales como si fueran cualquier otro tipo de dataset.
+
+```{r, echo=TRUE}
+
+library(sf)
+library(ggplot2)
+
+ctes <- st_read("municipios_2010_geo.shp")
+
+library(ggspatial)
+
+ggplot(ctes) +
+  geom_sf() +
+  xlab("Longitud") + ylab("Latitud") +
+  ggtitle("Municipios de Corrientes",
+          subtitle = "Fuente: Dirección de Estadisticas y Censos-Ctes")+
+    annotation_scale()
+
+
+```
+
+## Ejemplo con Mapview
+Visualización interactiva de datos espaciales en R.
+
+```{r, echo=TRUE}
+
+
+mapview:: mapview(ctes,labels=F,map.types = c("Esri.WorldShadedRelief", "OpenStreetMap.DE"), color = "grey40")
+mapview::mapview(list(ctes))
+mapview::mapview(ctes, alpha.regions = 0.2, aplha = 1)
+
+
+```
+
+## Ahora tmap
+Los mapas temáticos son mapas geográficos en los que se visualizan las distribuciones de datos espaciales.
+
+```{r, echo=TRUE}
+library(tmap)
+data("World")
+
+qtm(World, fill = "economy", format = "World", style = "col_blind")
+qtm(World, fill="pop_est_dens", theme="World", fill.style="kmeans", fill.title="Population per km")
+
+
+tm_shape(ctes) +
+  tm_polygons()
+
+tm_shape(World) +
+    tm_polygons("HPI")
+```
+Agregamos Interactividad
+
+```{r, echo=TRUE}
+tmap_mode("view")
+
+tm_shape(World) +
+    tm_polygons("HPI") # Indice de Precio de Vivienda
+```
+
+## Leaflet
+
+Leaflet es una de las bibliotecas de JavaScript de codigo abierto mas populares para mapas interactivos. Lo utilizan sitios web que van desde The New York Times y The Washington Post hasta GitHub y Flickr, asi como especialistas en SIG como OpenStreetMap, Mapbox y CartoDB.
+
+Este paquete R facilita la integracion y el control de los mapas de leaflet en R.
+
+## Catarteristicas
+- Zoom interactivo
+- Hacer mapas utilizando combinaciones arbitrarias de:
+      - Map tiles
+      -  Markers
+      -  Polygons
+      -  Lines
+      -  Popups
+      -  GeoJSON
+     
+-  Crear mapas directamente desde la consola R o RStudio
+-  Incrustar mapas en documentos Knitr / R Markdown y aplicaciones Shiny
+-  Representar facilmente objetos espaciales de los paquetes sp o sf, o data frame con columnas de latitud / longitud
+-  Usar los limites del mapa y los eventos del mouse para controlar la logica con Shiny.
+-  Visualizar mapas en proyecciones mercator no esfericas.
+-  Aumentar las caracteristicas del mapa usando los complementos elegidos del repositorio de complementos de Leaflet
+
+## Uso basico de Leaflet
+Uso basico
+
+Crea un mapa con Leaflet con estos pasos basicos:
+
+   Cree un widget de mapa llamando al leaflet().
+   Agregue capas (es decir, caracteristicas) al mapa usando funciones de capa (por ejemplo, addTiles, addMarkers,            addPolygons) para modificar el widget del mapa.
+   
+   
+
+## Un ejemplo 
+```{r, echo=TRUE}
+
+library(leaflet)
+
+leaflet() %>%
+  addTiles() %>%  # Map tiles OpenStreetMap 
+  addMarkers(lng=-58.7838539, lat= -27.4671957, popup="UNNE-FACENA-Corrientes")
+
+```
+
+
+## Mapa Base
+
+Si no especifico el Proveedor de Map Tile, usa el de OpenStreeetMap, sino se puedo llamar a otro 
+con la funcion addProviderTiles().Para saber mas sobre Proveedores:[aqui](http://leaflet-extras.github.io/leaflet-providers/preview/index.html)
+
+
+```{r, echo = TRUE}
+library(leaflet)
+
+leaflet() %>% 
+  addProviderTiles(providers$Stamen.Toner)%>%
+  addMarkers(lng=-58.78285, lat=-27.46797, popup="UNNE-FACENA-Corrientes")
+```
+
+```{r, echo = TRUE}
+library(leaflet)
+
+leaflet() %>% 
+  addProviderTiles(providers$Stamen.Terrain)%>%
+  addMarkers(lng=-58.78285, lat=-27.46797, popup="UNNE-FACENA-Corrientes")
+```
+
+## Caso de Uso 
+Primero cargos las Librerias que necesito, Luego cargo el archivo de Escuelas Secundarias
+y lo grafico.
+
+
+```{r, echo=TRUE}
+library(leaflet)
+library(leaflet.extras)
+library(readxl)
+
+icons <- awesomeIconList(
+  escuela = makeAwesomeIcon(icon='fa-home', library='fa', markerColor = 'blue'))
+
+datos<-read.csv("escuelas secundarias.csv") # Escuelas secundarias
+leaflet(datos) %>% addTiles() %>% addProviderTiles(providers$CartoDB.Positron) %>%
+  addAwesomeMarkers(data=datos,
+             lng=~Longitud, lat=~Latitud, 
+             label=~Cueanexo,
+             icon = icons,
+             popup = paste0("Nombre:", as.character(datos$Cueanexo)),
+             clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
+             labelOptions = labelOptions(noHide = F,
+                                         direction = 'auto'))
+
+```
+
+## Barra de Herramientas (ToolBar)
+Agrego al costado Barra de Herramientas de Dibujo
+
+```{r, echo=TRUE}
+
+leaflet(datos) %>% addTiles() %>% addProviderTiles(providers$CartoDB.Positron) %>%
+  #addBootstrapDependency() %>%
+  addMarkers(data=datos,
+             lng=~Longitud, lat=~Latitud, 
+             label=~Cueanexo,
+             popup = paste0("Nombre:", as.character(datos$Cueanexo)),
+             clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
+             labelOptions = labelOptions(noHide = F,
+                                         direction = 'auto'))%>%
+  addDrawToolbar(
+    targetGroup='datos',
+    editOptions = editToolbarOptions(selectedPathOptions = selectedPathOptions()))
+
+```
+
+## Archivo tipo Excel
+Leo un archivo .xlsx con las Escuelas Primarias
+
+```{r, echo=TRUE}
+library(readxl)
+prima<-read_xlsx("escuelas primarias.xlsx")
+
+leaflet(datos) %>% addTiles() %>% addProviderTiles(providers$CartoDB.Positron) %>%
+  #addBootstrapDependency() %>%
+  addAwesomeMarkers (data=datos,
+             lng=~Longitud, lat=~Latitud, 
+             label=~Cueanexo,
+             icon = icons,
+             popup = paste0("Nombre:", as.character(datos$Cueanexo)),
+             clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
+             labelOptions = labelOptions(noHide = F,
+                                         direction = 'auto'),group = 'Esc.Secundarias')%>%
+  
+ addCircleMarkers(data=prima,
+             lng=~Longitud, lat=~Latitud,
+             label=~Cueanexo,
+             #icon= icons,
+             popup = paste0("Nombre: ", as.character(prima$Nombre)),
+             clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
+             labelOptions = labelOptions(noHide = F,
+                                         direction = 'auto'),group = 'Esc. Primarias') %>% 
+ 
+  addDrawToolbar(
+    targetGroup='datos',
+    editOptions = editToolbarOptions(selectedPathOptions = selectedPathOptions()))%>% 
+  
+  addLayersControl(
+    overlayGroups = c('Esc.Secundarias','Esc. Primarias'),
+    options = layersControlOptions(collapsed = F)
+  )
+
+```
+ 
+## Archivo tipo WMS  (Web Map Service) Standard de OGC (Open Geospatial Consortium)
+Agrego un a rchivo desde un servidor de mapas Geoserver
+
+```{r, echo=TRUE}
+leaflet(datos) %>% addTiles() %>% addProviderTiles(providers$CartoDB.Positron) %>%
+  #addBootstrapDependency() %>%
+  addMarkers(data=datos,
+             lng=~Longitud, lat=~Latitud, 
+             label=~Cueanexo,
+             popup = paste0("Nombre:", as.character(datos$Cueanexo)),
+             clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
+             labelOptions = labelOptions(noHide = F,
+                                         direction = 'auto'),group = 'Esc.Secundarias')%>%
+  
+ addCircleMarkers(data=prima,
+             lng=~Longitud, lat=~Latitud,
+             label=~Cueanexo,
+             #icon= icons,
+             popup = paste0("Nombre: ", as.character(prima$Nombre)),
+             clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
+             labelOptions = labelOptions(noHide = F,
+                                         direction = 'auto'),group = 'Esc. Primarias') %>% 
+  addWMSTiles(
+    "http://geoportal.corrientes.gob.ar/geoserver/wms/",
+    layers = "Municipios",
+    options = WMSTileOptions(format = "image/png", transparent = T, opacity= 0.4),
+    attribution = "Municipios de Corrientes 2018 Ide Corr",group = 'Municipios'
+  ) %>%
+  
+  addDrawToolbar(
+    targetGroup='datos',
+    editOptions = editToolbarOptions(selectedPathOptions = selectedPathOptions()))%>% 
+  
+  addLayersControl(
+    overlayGroups = c('Esc.Secundarias','Esc. Primarias','Municipios'),
+    options = layersControlOptions(collapsed = F),position = "bottomleft"
+  )
+```
+
